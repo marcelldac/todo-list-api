@@ -10,12 +10,12 @@ import {
 
 const app = fastify();
 
-app.get("/tasks", createTask);
+app.post("/tasks", createTask);
 app.get("/tasks", readTask);
-app.get("/tasks/:id", updateTask);
-app.get("/tasks/:id", deleteTask);
+app.put("/tasks/:id", updateTask);
+app.delete("/tasks/:id", deleteTask);
 
-app.get("/helper", deleteTaskByName);
+app.delete("/helper", deleteTaskByName);
 
 app
   .listen({
