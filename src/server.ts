@@ -1,4 +1,5 @@
 import fastify from "fastify";
+import cors from "fastify-cors";
 
 import {
   createTask,
@@ -9,6 +10,8 @@ import {
 } from "./controller/taskController";
 
 const app = fastify({ logger: true });
+
+app.register(cors());
 
 app.post("/tasks", createTask);
 app.get("/tasks", readTask);
