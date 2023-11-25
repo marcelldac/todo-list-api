@@ -1,10 +1,11 @@
-const { PrismaClient } = require("@prisma/client");
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+
 const prisma = new PrismaClient();
 
 //#region Create Task
-/* The `exports.create` function is responsible for creating a new task in the database. It receives a
-request object (`req`) and a response object (`res`) as parameters. */
-exports.create = async (req, res) => {
+
+export const createTask = async (req: Request, res: Response) => {
   const { name } = req.body;
 
   const taskAlreadyExists = await prisma.task.findUnique({
@@ -28,11 +29,8 @@ exports.create = async (req, res) => {
 //#endregion
 
 //#region Read Tasks
-/* The `exports.read` function is responsible for retrieving all tasks from the database. It uses the
-`prisma.task.findMany()` method to fetch all tasks. If no tasks are found, it returns a 404 status
-code with an error message. If tasks are found, it returns a 200 status code with the tasks in JSON
-format. */
-exports.read = async (req, res) => {
+
+export const readTask = async (res: Response) => {
   const tasks = await prisma.task.findMany();
 
   if (!tasks) {
@@ -45,8 +43,8 @@ exports.read = async (req, res) => {
 //#endregion
 
 //#region Update Todo
-/* The `exports.update` function is responsible for updating a task in the database. */
-exports.update = async (req, res) => {
+
+export const updateTask = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, isCompleted } = req.body;
 
@@ -75,9 +73,9 @@ exports.update = async (req, res) => {
 
 //#endregion
 
-//#region Delete Todo
-/* The `exports.delete` function is responsible for deleting a task from the database. */
-exports.delete = async (req, res) => {
+//#region Delete Task
+
+export const deleteTask = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const intID = parseInt(id);
@@ -100,9 +98,8 @@ exports.delete = async (req, res) => {
 //#endregion
 
 //#region Delete Task By Name
-/* The `exports.deleteByName` function is responsible for deleting a task from the database based on
-its name. It receives a request object (`req`) and a response object (`res`) as parameters. */
-exports.deleteByName = async (req, res) => {
+
+export const deleteTaskByName = async (req: Request, res: Response) => {
   const { name } = req.body;
 
   if (!name) {
