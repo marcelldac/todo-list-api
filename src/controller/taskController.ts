@@ -1,53 +1,83 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 
 const prisma = new PrismaClient();
 
 //#region Create Task
 
-export const createTask = async (req: Request, res: Response) => {
-  const { name } = req.body;
-
-  const taskAlreadyExists = await prisma.task.findUnique({
-    where: {
-      name,
-    },
+export const createTask = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  const createUserSchema = z.object({
+    name: z.string(),
   });
 
-  if (!taskAlreadyExists) {
-    const task = await prisma.task.create({
-      data: {
+  try {
+    const { name } = createUserSchema.parse(request.body);
+
+    const taskAlreadyExists = await prisma.task.findUnique({
+      where: {
         name,
       },
     });
-    return res.status(201).json(task);
-  }
 
-  return res.status(500).json({ error: "Task already exists" });
+    if (!taskAlreadyExists) {
+      await prisma.task.create({
+        data: {
+          name,
+        },
+      });
+      return reply.status(200).send();
+    }
+
+    return reply
+      .code(500)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send({ error: "Task already exists" });
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 //#endregion
 
 //#region Read Tasks
 
-export const readTask = async (res: Response) => {
+export const readTask = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
   const tasks = await prisma.task.findMany();
 
   if (!tasks) {
-    return res.status(404).json({ error: "Tasks not found" });
+    return reply
+      .code(404)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send({ error: "Tasks not found" });
   }
 
-  return res.status(200).json(tasks);
+  return { tasks };
 };
 
 //#endregion
 
 //#region Update Todo
 
-export const updateTask = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { name, isCompleted } = req.body;
+export const updateTask = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  const { id } = request.params;
 
+  const createUserSchema = z.object({
+    name: z.string(),
+    isCompleted: z.boolean(),
+  });
+
+  const { name, isCompleted } = createUserSchema.parse(request.body);
   const intID = parseInt(id);
 
   const taskAlreadyExists = await prisma.task.findUnique({
@@ -55,10 +85,13 @@ export const updateTask = async (req: Request, res: Response) => {
   });
 
   if (!taskAlreadyExists) {
-    return res.status(404).json({ message: "Task does not exists" });
+    return reply
+      .code(404)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send({ error: "Task does not exists" });
   }
 
-  const task = await prisma.task.update({
+  await prisma.task.update({
     where: {
       id: intID,
     },
@@ -68,31 +101,42 @@ export const updateTask = async (req: Request, res: Response) => {
     },
   });
 
-  return res.status(200).json(task);
+  return reply.status(200).send();
 };
 
 //#endregion
 
 //#region Delete Task
 
-export const deleteTask = async (req: Request, res: Response) => {
+export const deleteTask = async (
+  req: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
   const { id } = req.params;
-
   const intID = parseInt(id);
 
-  const taskAlreadyExist = await prisma.task.findUnique({
-    where: { id: intID },
-  });
+  try {
+    const taskAlreadyExist = await prisma.task.findUnique({
+      where: { id: intID },
+    });
 
-  if (!taskAlreadyExist) {
-    return res.status(404).json({ error: "Task not found" });
+    if (!taskAlreadyExist) {
+      return reply
+        .code(404)
+        .header("Content-Type", "application/json; charset=utf-8")
+        .send({ error: "Task not found" });
+    }
+
+    await prisma.task.delete({ where: { id: intID } });
+
+    return reply.status(200).send();
+  } catch (e) {
+    console.log(e);
+    return reply
+      .code(404)
+      .header("Content-Type", "application/json; charset=utf-8")
+      .send({ error: e });
   }
-
-  await prisma.task.delete({ where: { id: intID } });
-
-  return res
-    .status(200)
-    .json({ message: `Task with id '${intID}' was deleted successfully` });
 };
 
 //#endregion
