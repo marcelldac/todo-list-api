@@ -8,7 +8,7 @@ import {
   deleteTaskByName,
 } from "./controller/taskController";
 
-const app = fastify();
+const app = fastify({ logger: true });
 
 app.post("/tasks", createTask);
 app.get("/tasks", readTask);
@@ -17,11 +17,17 @@ app.delete("/tasks/:id", deleteTask);
 
 app.delete("/helper", deleteTaskByName);
 
-app
-  .listen({
-    host: "0.0.0.0",
-    port: process.env.PORT ? Number(process.env.PORT) : 3333,
-  })
-  .then(() => {
+const start = async () => {
+  try {
+    await app.listen({
+      host: "0.0.0.0",
+      port: process.env.PORT ? Number(process.env.PORT) : 3333,
+    });
     console.log("HTTP Server Running");
-  });
+  } catch (error) {
+    console.error("Error starting server:", error);
+    process.exit(1);
+  }
+};
+
+start();
